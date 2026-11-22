@@ -14,7 +14,7 @@ where required), third-party actions pinned to full commit SHAs, a
 | Project type | Starter | What it checks |
 | --- | --- | --- |
 | Node / TypeScript (`package.json`, `tsconfig.json`) | [`starters/node-ts/ci.yml`](starters/node-ts/ci.yml) | `npm ci`, then `lint`, `typecheck`, `test`, `build` — each only if that npm script exists. Node version from input, else `.nvmrc`, else 22. |
-| Python (`requirements*.txt` / `pyproject.toml`) | [`starters/python/ci.yml`](starters/python/ci.yml) | Installs dependencies, `ruff check .` (ruff installed in the job if absent), `pytest` if a `tests/` (or `test/`) dir exists. |
+| Python (`requirements*.txt` / `pyproject.toml`) | [`starters/python/ci.yml`](starters/python/ci.yml) | Installs dependencies, `ruff check .` (ruff installed in the job if absent; errors-only rules `E4,E7,E9,F` when the repo has no ruff config), `pytest` if a `tests/` (or `test/`) dir exists. |
 | Go (`go.mod`) | [`starters/go/ci.yml`](starters/go/ci.yml) | Go version from `go.mod`; `go vet ./...`, `go test ./...`, `go build ./...`. |
 | Anything with a `Dockerfile` | [`starters/docker-build/ci.yml`](starters/docker-build/ci.yml) | Builds the image (no push, no registry login) to prove it builds. Inputs `context`, `file`. |
 | Static HTML site deployed to GitHub Pages | [`starters/static-pages/ci.yml`](starters/static-pages/ci.yml) | Optional build command, upload Pages artifact, deploy on push (build-only on PRs). Caller job needs `pages: write` + `id-token: write`; repo Pages source must be "GitHub Actions". |

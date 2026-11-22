@@ -1,6 +1,6 @@
 # Reusable workflow: Python project.
 # Installs dependencies (requirements*.txt, else pyproject.toml), runs
-# `ruff check`, and runs pytest when a tests directory exists.
+# `ruff check` (E4,E7,E9,F when the repo has no ruff config), and runs pytest when a tests directory exists.
 name: python
 
 on:
@@ -14,6 +14,10 @@ on:
         description: "Directory containing requirements*.txt / pyproject.toml."
         type: string
         default: "."
+      ruff-version:
+        description: "Pin ruff (e.g. 0.8.6). Empty = latest."
+        type: string
+        default: ""
       ruff-args:
         description: "Extra arguments for `ruff check` (after the target path)."
         type: string
@@ -72,13 +76,20 @@ jobs:
 
       - name: Lint (ruff)
         env:
+          RUFF_VERSION: ${{ inputs.ruff-version }}
           RUFF_ARGS: ${{ inputs.ruff-args }}
         run: |
           if ! command -v ruff >/dev/null 2>&1; then
-            python -m pip install ruff
+            python -m pip install "ruff${RUFF_VERSION:+==$RUFF_VERSION}"
+          fi
+          args=()
+          # Repos without ruff config get the classic error-only rule set, so the
+          # check stays stable when ruff changes its built-in defaults.
+          if [ ! -f ruff.toml ] && [ ! -f .ruff.toml ] && ! grep -qs '^\[tool\.ruff' pyproject.toml; then
+            args+=(--select E4,E7,E9,F)
           fi
           # shellcheck disable=SC2086
-          ruff check . $RUFF_ARGS
+          ruff check . "${args[@]}" $RUFF_ARGS
 
       - name: Test (pytest)
         env:
