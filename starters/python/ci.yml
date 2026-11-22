@@ -1,0 +1,29 @@
+# CI starter: Python: ruff check + pytest.
+# Copy to .github/workflows/ci.yml. Adjust `branches` to the repo's default branch.
+# The `uses:` ref is pinned to a commit SHA; see README "Bumping the pinned SHA".
+name: CI
+
+on:
+  pull_request:
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
+  push:
+    branches: [main]
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    uses: Rumi-Shamz/ci-templates/.github/workflows/python.yml@__CI_TEMPLATES_SHA__ # v1
+    # with:
+    #   python-version: "3.12"
+    #   working-directory: "."

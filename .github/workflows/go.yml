@@ -1,0 +1,52 @@
+# Reusable workflow: Go project.
+# setup-go (version from go.mod), then go vet, go test, go build.
+name: go
+
+on:
+  workflow_call:
+    inputs:
+      working-directory:
+        description: "Directory containing go.mod."
+        type: string
+        default: "."
+      cache:
+        description: "Cache Go modules/build (needs a go.sum; set false if there is none)."
+        type: boolean
+        default: true
+      timeout-minutes:
+        description: "Job timeout."
+        type: number
+        default: 15
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ inputs.timeout-minutes }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version-file: ${{ inputs.working-directory }}/go.mod
+          cache: ${{ inputs.cache }}
+          cache-dependency-path: ${{ inputs.working-directory }}/go.sum
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test ./...
+
+      - name: Build
+        run: go build ./...

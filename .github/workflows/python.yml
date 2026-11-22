@@ -1,0 +1,102 @@
+# Reusable workflow: Python project.
+# Installs dependencies (requirements*.txt, else pyproject.toml), runs
+# `ruff check`, and runs pytest when a tests directory exists.
+name: python
+
+on:
+  workflow_call:
+    inputs:
+      python-version:
+        description: "Python version."
+        type: string
+        default: "3.12"
+      working-directory:
+        description: "Directory containing requirements*.txt / pyproject.toml."
+        type: string
+        default: "."
+      ruff-args:
+        description: "Extra arguments for `ruff check` (after the target path)."
+        type: string
+        default: ""
+      pytest-args:
+        description: "Extra arguments for pytest."
+        type: string
+        default: ""
+      timeout-minutes:
+        description: "Job timeout."
+        type: number
+        default: 20
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ inputs.timeout-minutes }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: ${{ inputs.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          found=0
+          for f in requirements*.txt; do
+            if [ -f "$f" ]; then
+              echo "::group::pip install -r $f"
+              python -m pip install -r "$f"
+              echo "::endgroup::"
+              found=1
+            fi
+          done
+          if [ "$found" = 0 ] && [ -f pyproject.toml ]; then
+            echo "::group::pip install -e . (pyproject.toml)"
+            python -m pip install -e ".[dev,test]" || python -m pip install -e .
+            echo "::endgroup::"
+          fi
+          if [ "$found" = 0 ] && [ ! -f pyproject.toml ]; then
+            echo "::notice::No requirements*.txt or pyproject.toml — nothing to install"
+          fi
+
+      - name: Lint (ruff)
+        env:
+          RUFF_ARGS: ${{ inputs.ruff-args }}
+        run: |
+          if ! command -v ruff >/dev/null 2>&1; then
+            python -m pip install ruff
+          fi
+          # shellcheck disable=SC2086
+          ruff check . $RUFF_ARGS
+
+      - name: Test (pytest)
+        env:
+          PYTEST_ARGS: ${{ inputs.pytest-args }}
+        run: |
+          if [ ! -d tests ] && [ ! -d test ]; then
+            echo "::notice::No tests/ directory — pytest skipped"
+            exit 0
+          fi
+          if ! python -c "import pytest" >/dev/null 2>&1; then
+            python -m pip install pytest
+          fi
+          set +e
+          # shellcheck disable=SC2086
+          python -m pytest $PYTEST_ARGS
+          rc=$?
+          if [ "$rc" = 5 ]; then
+            echo "::notice::pytest collected no tests"
+            exit 0
+          fi
+          exit "$rc"

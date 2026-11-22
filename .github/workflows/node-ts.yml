@@ -1,0 +1,78 @@
+# Reusable workflow: Node / TypeScript project.
+# Runs `npm ci`, then lint / typecheck / test / build — each only if the
+# matching npm script exists in package.json.
+name: node-ts
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: "Node version. Empty = use .nvmrc in working-directory if present, else 22."
+        type: string
+        default: ""
+      working-directory:
+        description: "Directory containing package.json and package-lock.json."
+        type: string
+        default: "."
+      timeout-minutes:
+        description: "Job timeout."
+        type: number
+        default: 15
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ inputs.timeout-minutes }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Resolve Node version
+        id: node
+        env:
+          NODE_VERSION_INPUT: ${{ inputs.node-version }}
+          WORKDIR: ${{ inputs.working-directory }}
+        run: |
+          # Explicit input wins; else .nvmrc in the working directory; else 22.
+          if [ -n "$NODE_VERSION_INPUT" ]; then
+            echo "version=$NODE_VERSION_INPUT" >> "$GITHUB_OUTPUT"
+          elif [ -f .nvmrc ]; then
+            echo "file=${WORKDIR}/.nvmrc" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=22" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ steps.node.outputs.version }}
+          node-version-file: ${{ steps.node.outputs.file }}
+          cache: npm
+          cache-dependency-path: ${{ inputs.working-directory }}/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run package scripts (lint, typecheck, test, build)
+        run: |
+          has_script() {
+            node -e 'const s=(require("./package.json").scripts)||{}; process.exit(s[process.argv[1]]?0:1)' "$1"
+          }
+          for script in lint typecheck test build; do
+            if has_script "$script"; then
+              echo "::group::npm run $script"
+              npm run "$script"
+              echo "::endgroup::"
+            else
+              echo "::notice::No \"$script\" script in package.json — skipped"
+            fi
+          done

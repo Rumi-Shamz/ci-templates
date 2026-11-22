@@ -1,0 +1,81 @@
+# Reusable workflow: static site -> GitHub Pages.
+# Optional build command, then upload the site as a Pages artifact and (when
+# `deploy` is true) deploy it.
+#
+# The CALLER job must grant:
+#   permissions: { contents: read, pages: write, id-token: write }
+# and the repo needs Settings -> Pages -> Source = "GitHub Actions".
+name: static-pages
+
+on:
+  workflow_call:
+    inputs:
+      build-command:
+        description: "Optional shell command that produces the site (e.g. `npm ci && npm run build`)."
+        type: string
+        default: ""
+      working-directory:
+        description: "Directory the build command runs in."
+        type: string
+        default: "."
+      path:
+        description: "Directory to publish, relative to the repo root (after the build)."
+        type: string
+        default: "."
+      deploy:
+        description: "Deploy to Pages. Pass false (e.g. on pull_request) to only build and upload."
+        type: boolean
+        default: true
+      timeout-minutes:
+        description: "Timeout for each job."
+        type: number
+        default: 15
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ inputs.timeout-minutes }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build site
+        if: inputs.build-command != ''
+        working-directory: ${{ inputs.working-directory }}
+        env:
+          BUILD_COMMAND: ${{ inputs.build-command }}
+        run: bash -euo pipefail -c "$BUILD_COMMAND"
+
+      - name: Configure Pages
+        if: inputs.deploy
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: ${{ inputs.path }}
+
+  deploy:
+    if: inputs.deploy
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ inputs.timeout-minutes }}
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

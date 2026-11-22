@@ -1,0 +1,29 @@
+# CI starter: Node / TypeScript: lint, typecheck, test, build (whichever npm scripts exist).
+# Copy to .github/workflows/ci.yml. Adjust `branches` to the repo's default branch.
+# The `uses:` ref is pinned to a commit SHA; see README "Bumping the pinned SHA".
+name: CI
+
+on:
+  pull_request:
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
+  push:
+    branches: [main]
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  node-ts:
+    uses: Rumi-Shamz/ci-templates/.github/workflows/node-ts.yml@__CI_TEMPLATES_SHA__ # v1
+    # with:
+    #   node-version: "22"        # default: .nvmrc, else 22
+    #   working-directory: "."

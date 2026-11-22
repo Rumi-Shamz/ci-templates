@@ -1,0 +1,34 @@
+# CI starter: Static site: build (optional) and deploy to GitHub Pages.
+# Copy to .github/workflows/ci.yml. Adjust `branches` to the repo's default branch.
+# The `uses:` ref is pinned to a commit SHA; see README "Bumping the pinned SHA".
+name: CI
+
+on:
+  pull_request:
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
+  push:
+    branches: [main]
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  pages:
+    uses: Rumi-Shamz/ci-templates/.github/workflows/static-pages.yml@__CI_TEMPLATES_SHA__ # v1
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    with:
+      build-command: ""        # e.g. "npm ci && npm run build"
+      path: "."                # directory to publish, e.g. "dist"
+      deploy: ${{ github.event_name == 'push' }}
