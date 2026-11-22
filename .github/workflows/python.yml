@@ -86,7 +86,7 @@ jobs:
           # Repos without ruff config get the classic error-only rule set, so the
           # check stays stable when ruff changes its built-in defaults.
           if [ ! -f ruff.toml ] && [ ! -f .ruff.toml ] && ! grep -qs '^\[tool\.ruff' pyproject.toml; then
-            args+=(--select E4,E7,E9,F)
+            args+=(--select "E4,E7,E9,F")
           fi
           # shellcheck disable=SC2086
           ruff check . "${args[@]}" $RUFF_ARGS
