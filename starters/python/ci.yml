@@ -23,7 +23,7 @@ permissions:
 
 jobs:
   python:
-    uses: Rumi-Shamz/ci-templates/.github/workflows/python.yml@e2c101c1b9c314bcedcdf28a043b5346c967c691 # v1
+    uses: Rumi-Shamz/ci-templates/.github/workflows/python.yml@4950ebeb1faa4491c82be9cb8742c2ab0f77322f # v1
     # with:
     #   python-version: "3.12"
     #   working-directory: "."

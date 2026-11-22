@@ -23,7 +23,7 @@ permissions:
 
 jobs:
   node-ts:
-    uses: Rumi-Shamz/ci-templates/.github/workflows/node-ts.yml@e2c101c1b9c314bcedcdf28a043b5346c967c691 # v1
+    uses: Rumi-Shamz/ci-templates/.github/workflows/node-ts.yml@4950ebeb1faa4491c82be9cb8742c2ab0f77322f # v1
     # with:
     #   node-version: "22"        # default: .nvmrc, else 22
     #   working-directory: "."
