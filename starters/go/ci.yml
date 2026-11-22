@@ -23,6 +23,6 @@ permissions:
 
 jobs:
   go:
-    uses: Rumi-Shamz/ci-templates/.github/workflows/go.yml@__CI_TEMPLATES_SHA__ # v1
+    uses: Rumi-Shamz/ci-templates/.github/workflows/go.yml@e2c101c1b9c314bcedcdf28a043b5346c967c691 # v1
     # with:
     #   working-directory: "."
