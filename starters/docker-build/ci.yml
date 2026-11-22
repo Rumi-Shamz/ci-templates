@@ -23,7 +23,7 @@ permissions:
 
 jobs:
   docker-build:
-    uses: Rumi-Shamz/ci-templates/.github/workflows/docker-build.yml@3ca9ee13bab88cd1454052dfc070da935a2f4527 # v1
+    uses: Rumi-Shamz/ci-templates/.github/workflows/docker-build.yml@7fce04bff5ab5058e749b6fb33c3486880fd65ef # v1
     # with:
     #   context: "."
     #   file: ""                 # default <context>/Dockerfile
